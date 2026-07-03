@@ -4,7 +4,8 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import PingLog
+from app.models import Device, PingLog
+from app.schemas import DeviceCreate, DeviceRead
 
 app = FastAPI(
     title="DeviceMonitoring API",
@@ -29,3 +30,17 @@ def db_check(db: Session = Depends(get_db)):
   """Confirmas que la API puede consultar la base de datos."""
   total = db.scalar(select(func.count()).select_from(PingLog))
   return {"db": "ok", "ping_log_rows": total}
+
+
+@app.post("/devices", response_model=DeviceRead, status_code=201)
+def create_device(payload: DeviceCreate, db: Session = Depends(get_db)):
+  device = Device(
+    name=payload.name,
+    ip_address=str(payload.ip_address),
+    device_type=payload.device_type.value,
+    location=payload.location
+  )
+  db.add(device)
+  db.commit()
+  db.refresh(device)
+  return device
