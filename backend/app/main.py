@@ -44,3 +44,8 @@ def create_device(payload: DeviceCreate, db: Session = Depends(get_db)):
   db.commit()
   db.refresh(device)
   return device
+
+@app.get("/devices", response_model=list[DeviceRead])
+def list_devices(db: Session = Depends(get_db)):
+  devices = db.scalars(select(Device).order_by(Device.created_at.desc())).all()
+  return devices
