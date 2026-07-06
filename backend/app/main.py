@@ -1,4 +1,4 @@
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import Device, PingLog
 from app.schemas import DeviceCreate, DeviceRead
+from app.snmp import snmp_get
 
 app = FastAPI(
     title="DeviceMonitoring API",
@@ -20,21 +21,29 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# OIDs estándar del grupo "system" (MIB-II) — sirven para cualquier equipo
+SYSTEM_OIDS = {
+    "sys_name": "1.3.6.1.2.1.1.5.0",
+    "sys_descr": "1.3.6.1.2.1.1.1.0",
+    "sys_uptime": "1.3.6.1.2.1.1.3.0",
+    "sys_location": "1.3.6.1.2.1.1.6.0",
+}
+
+
 @app.get("/healthz")
 def health_check():
-  """Endpont de salud: confirma que la API esta activa"""
-  return {"status": "ok"}
+    return {"status": "ok"}
+
 
 @app.get("/db-check")
 def db_check(db: Session = Depends(get_db)):
-  """Confirmas que la API puede consultar la base de datos."""
-  total = db.scalar(select(func.count()).select_from(PingLog))
-  return {"db": "ok", "ping_log_rows": total}
+    total = db.scalar(select(func.count()).select_from(PingLog))
+    return {"db": "ok", "ping_log_rows": total}
 
 
 @app.post("/devices", response_model=DeviceRead, status_code=201)
 def create_device(payload: DeviceCreate, db: Session = Depends(get_db)):
-  device = Device(
+    device = Device(
         name=payload.name,
         ip_address=str(payload.ip_address),
         device_type=payload.device_type.value,
@@ -43,12 +52,37 @@ def create_device(payload: DeviceCreate, db: Session = Depends(get_db)):
         snmp_community=payload.snmp_community,
         snmp_port=payload.snmp_port,
     )
-  db.add(device)
-  db.commit()
-  db.refresh(device)
-  return device
+    db.add(device)
+    db.commit()
+    db.refresh(device)
+    return device
+
 
 @app.get("/devices", response_model=list[DeviceRead])
 def list_devices(db: Session = Depends(get_db)):
-  devices = db.scalars(select(Device).order_by(Device.created_at.desc())).all()
-  return devices
+    devices = db.scalars(select(Device).order_by(Device.created_at.desc())).all()
+    return devices
+
+
+@app.get("/devices/{device_id}/snmp")
+def query_device_snmp(device_id: int, db: Session = Depends(get_db)):
+    device = db.get(Device, device_id)
+    if device is None:
+        raise HTTPException(status_code=404, detail="Equipo no encontrado")
+    if not device.snmp_community:
+        raise HTTPException(status_code=400, detail="El equipo no tiene community SNMP configurada")
+
+    try:
+        readout = {
+            key: snmp_get(device.ip_address, device.snmp_community, oid, device.snmp_port)
+            for key, oid in SYSTEM_OIDS.items()
+        }
+    except RuntimeError as exc:
+        raise HTTPException(status_code=502, detail=f"El equipo no respondió por SNMP: {exc}")
+
+    return {
+        "device_id": device.id,
+        "name": device.name,
+        "ip_address": device.ip_address,
+        "snmp": readout,
+    }
