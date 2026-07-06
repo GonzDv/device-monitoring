@@ -35,11 +35,14 @@ def db_check(db: Session = Depends(get_db)):
 @app.post("/devices", response_model=DeviceRead, status_code=201)
 def create_device(payload: DeviceCreate, db: Session = Depends(get_db)):
   device = Device(
-    name=payload.name,
-    ip_address=str(payload.ip_address),
-    device_type=payload.device_type.value,
-    location=payload.location
-  )
+        name=payload.name,
+        ip_address=str(payload.ip_address),
+        device_type=payload.device_type.value,
+        location=payload.location,
+        snmp_version=payload.snmp_version.value,
+        snmp_community=payload.snmp_community,
+        snmp_port=payload.snmp_port,
+    )
   db.add(device)
   db.commit()
   db.refresh(device)
