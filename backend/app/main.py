@@ -5,8 +5,8 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import Device, PingLog
-from app.schemas import DeviceCreate, DeviceRead
 from app.snmp import snmp_get
+from app.schemas import DeviceCreate, DeviceRead, DeviceUpdate
 
 app = FastAPI(
     title="DeviceMonitoring API",
@@ -62,6 +62,24 @@ def create_device(payload: DeviceCreate, db: Session = Depends(get_db)):
 def list_devices(db: Session = Depends(get_db)):
     devices = db.scalars(select(Device).order_by(Device.created_at.desc())).all()
     return devices
+
+@app.patch("/devices/{device_id}", response_model=DeviceRead)
+def update_device(device_id: int, payload: DeviceUpdate, db: Session = Depends(get_db)):
+    device = db.get(Device, device_id)
+    if device is None:
+        raise HTTPException(status_code=404, detail="Equipo no encontrado")
+
+    updates = payload.model_dump(exclude_unset=True)
+    for field, value in updates.items():
+        if field == "ip_address" and value is not None:
+            value = str(value)
+        if field in ("device_type", "snmp_version") and value is not None:
+            value = value.value
+        setattr(device, field, value)
+
+    db.commit()
+    db.refresh(device)
+    return device
 
 
 @app.get("/devices/{device_id}/snmp")
