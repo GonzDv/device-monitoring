@@ -1,0 +1,55 @@
+## Estado de Salud General del Hardware
+Temperatura del Sistema (Celsius): .1.3.6.1.4.1.5127.1.1.1.8.1.7.1
+Estado del Ventilador (Fan Status): .1.3.6.1.4.1.5127.1.1.1.8.1.6.1 (Suele devolver valores de texto o RPM).
+
+##. Estado de los Discos Duros (HDDs)
+Temperatura del Disco 1: .1.3.6.1.4.1.5127.1.1.1.8.1.2.1
+Temperatura del Disco 2: .1.3.6.1.4.1.5127.1.1.1.8.1.2.2
+Estado de Salud de los Discos (S.M.A.R.T.): .1.3.6.1.4.1.5127.1.1.1.8.1.3
+Devuelve cadenas de texto (ej. Healthy / Degraded / Failed).
+
+## Volúmenes de Almacenamiento y RAID
+Tabla de Volúmenes (RAID): .1.3.6.1.4.1.5127.1.1.1.9
+Nombre del Volumen: .1.3.6.1.4.1.5127.1.1.1.9.1.2.1 (Por lo general devuelve Volume_1).
+Nivel de RAID: .1.3.6.1.4.1.5127.1.1.1.9.1.4.1 (Te dirá si es RAID 1 o RAID 0).
+Espacio Libre del Volumen: .1.3.6.1.4.1.5127.1.1.1.9.1.6.1
+
+## Métricas Estándar del Sistema (MIF-2 Linux Base)
+Nombre del Host (sysName): .1.3.6.1.2.1.1.5.0
+Tiempo de Actividad (sysUpTime): .1.3.6.1.2.1.1.3.0 (Clave para saber si el NAS se reinició solo).
+Tráfico de Red Entrante (ifInOctets): .1.3.6.1.2.1.2.2.1.10.1
+Tráfico de Red Saliente (ifOutOctets): .1.3.6.1.2.1.2.2.1.16.1
+172.16.20.240
+
+
+.3.6.1.4.1.5127.1.1.1.9.1.1.0 = STRING: "1.00"
+iso.3.6.1.4.1.5127.1.1.1.9.1.2.0 = STRING: "5.33.102 (5.33.102.0306.2026)"
+iso.3.6.1.4.1.5127.1.1.1.9.1.3.0 = STRING: "MyCloudPR2100"
+iso.3.6.1.4.1.5127.1.1.1.9.1.5.0 = STRING: "1"
+iso.3.6.1.4.1.5127.1.1.1.9.1.6.0 = STRING: "0"
+iso.3.6.1.4.1.5127.1.1.1.9.1.7.0 = STRING: "Centigrade:37       Fahrenheit:98"
+iso.3.6.1.4.1.5127.1.1.1.9.1.8.0 = STRING: "fan0: running    "
+iso.3.6.1.4.1.5127.1.1.1.9.1.9.1.1.1 = INTEGER: 1
+iso.3.6.1.4.1.5127.1.1.1.9.1.9.1.2.1 = STRING: "Volume_1"
+iso.3.6.1.4.1.5127.1.1.1.9.1.9.1.3.1 = STRING: "ext4"
+iso.3.6.1.4.1.5127.1.1.1.9.1.9.1.4.1 = STRING: "spanning"
+iso.3.6.1.4.1.5127.1.1.1.9.1.9.1.5.1 = STRING: "18.1T"
+iso.3.6.1.4.1.5127.1.1.1.9.1.9.1.6.1 = STRING: "17.0T"
+iso.3.6.1.4.1.5127.1.1.1.9.1.10.1.1.1 = INTEGER: 1
+iso.3.6.1.4.1.5127.1.1.1.9.1.10.1.1.2 = INTEGER: 2
+iso.3.6.1.4.1.5127.1.1.1.9.1.10.1.2.1 = STRING: "WD"
+iso.3.6.1.4.1.5127.1.1.1.9.1.10.1.2.2 = STRING: "WD"
+iso.3.6.1.4.1.5127.1.1.1.9.1.10.1.3.1 = STRING: "WDC WD100EFAX-68LHPN0"
+iso.3.6.1.4.1.5127.1.1.1.9.1.10.1.3.2 = STRING: "WDC WD100EFAX-68LHPN0"
+iso.3.6.1.4.1.5127.1.1.1.9.1.10.1.4.1 = STRING: "1DGRAUTZ"
+iso.3.6.1.4.1.5127.1.1.1.9.1.10.1.4.2 = STRING: "1DGSRBLZ"
+iso.3.6.1.4.1.5127.1.1.1.9.1.10.1.5.1 = STRING: "Centigrade:49"
+iso.3.6.1.4.1.5127.1.1.1.9.1.10.1.5.2 = STRING: "Centigrade:52"
+iso.3.6.1.4.1.5127.1.1.1.9.1.10.1.6.1 = STRING: "10000 GB."
+iso.3.6.1.4.1.5127.1.1.1.9.1.10.1.6.2 = STRING: "10000 GB."
+iso.3.6.1.4.1.5127.1.1.1.9.1.11.1.1.1 = INTEGER: 1
+iso.3.6.1.4.1.5127.1.1.1.9.1.11.1.2.1 = STRING: "N/A"
+iso.3.6.1.4.1.5127.1.1.1.9.1.11.1.3.1 = STRING: "--"
+iso.3.6.1.4.1.5127.1.1.1.9.1.11.1.4.1 = STRING: "--"
+iso.3.6.1.4.1.5127.1.1.1.9.1.11.1.5.1 = STRING: "N/A"
+iso.3.6.1.4.1.5127.1.1.1.9.1.11.1.6.1 = STRING: "N/A"
