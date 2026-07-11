@@ -8,7 +8,7 @@ from contextlib import asynccontextmanager
 from app.scheduler import scheduler, start_scheduler
 
 from app.database import get_db
-from app.models import Device, PingLog
+from app.models import Device, Metric, PingLog
 from app.snmp import snmp_get
 from app.schemas import DeviceCreate, DeviceRead, DeviceUpdate
 
@@ -76,6 +76,25 @@ def create_device(payload: DeviceCreate, db: Session = Depends(get_db)):
 def list_devices(db: Session = Depends(get_db)):
     devices = db.scalars(select(Device).order_by(Device.created_at.desc())).all()
     return devices
+
+
+@app.get("/devices/{device_id}/history")
+def device_history(device_id: int, limit: int = 50, db: Session = Depends(get_db)):
+    device = db.get(Device, device_id)
+    if device is None:
+        raise HTTPException(status_code=404, detail="Equipo no encontrado")
+
+    rows = db.execute(
+        select(Metric)
+        .where(Metric.device_id == device_id)
+        .order_by(Metric.time.desc())
+        .limit(limit)
+    ).scalars().all()
+
+    return [
+        {"time": r.time, "metric_key": r.metric_key, "value": r.value}
+        for r in rows
+    ]
 
 @app.patch("/devices/{device_id}", response_model=DeviceRead)
 def update_device(device_id: int, payload: DeviceUpdate, db: Session = Depends(get_db)):

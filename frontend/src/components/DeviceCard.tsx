@@ -21,6 +21,16 @@ interface DeviceCardProps {
   onEdit: (device: Device) => void;
   onDelete: (device: Device) => void;
 }
+const statusColor = {
+  up: "bg-green-500",
+  down: "bg-red-500",
+  unknown: "bg-zinc-500",
+};
+const statusLabel = {
+  up: "En línea",
+  down: "Caído",
+  unknown: "Desconocido",
+};
 
 export default function DeviceCard({
   device,
@@ -62,6 +72,14 @@ export default function DeviceCard({
               <span className="text-[11px] font-mono uppercase tracking-wider text-zinc-500 mt-1 block">
                 {device.device_type}
               </span>
+              <div className="flex items-center gap-1 mt-1">
+                <span
+                  className={`w-2.5 h-2.5 rounded-full ${statusColor[device.status]}`}
+                ></span>
+                <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-500 ml-1">
+                  {statusLabel[device.status].toUpperCase()}
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -90,7 +108,7 @@ export default function DeviceCard({
             <>
               <Loader2 className="w-4 h-4 animate-spin" />
               Consultando...
-            </> 
+            </>
           ) : (
             <>
               <Activity className="w-4 h-4" />
@@ -120,9 +138,6 @@ export default function DeviceCard({
             <div className="text-zinc-500 pb-2 mb-2 border-b border-zinc-800/80 flex justify-between items-center">
               <span className="flex items-center gap-1.5">
                 <Terminal className="w-3.5 h-3.5" /> OUTPUT
-              </span>
-              <span className="text-emerald-400 flex items-center gap-1">
-                ● OK
               </span>
             </div>
             <p className="text-zinc-300 flex flex-col gap-0.5">

@@ -9,6 +9,8 @@ export interface Device {
   snmp_version: string;
   snmp_port: number;
   snmp_community: string | null;
+  status: "up" | "down" | "unknown";
+  last_seen_at: string | null;
   created_at: string;
 }
 

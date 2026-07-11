@@ -39,6 +39,8 @@ class DeviceRead(BaseModel):
     location: str | None
     snmp_version: str
     snmp_port: int
+    status: str
+    last_seen_at: datetime | None
     created_at: datetime
 
 class DeviceUpdate(BaseModel):
