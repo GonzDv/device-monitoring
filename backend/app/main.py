@@ -3,15 +3,29 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from contextlib import asynccontextmanager
+
+from app.scheduler import scheduler, start_scheduler
+
 from app.database import get_db
 from app.models import Device, PingLog
 from app.snmp import snmp_get
 from app.schemas import DeviceCreate, DeviceRead, DeviceUpdate
 
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    start_scheduler()      # al arrancar la API
+    yield
+    scheduler.shutdown()   # al apagarla
+
+
 app = FastAPI(
     title="DeviceMonitoring API",
     description="API del sistema de monitoreo de equipos vía SNMP.",
     version="0.1.0",
+    lifespan=lifespan, 
 )
 
 app.add_middleware(
