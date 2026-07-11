@@ -81,6 +81,15 @@ def update_device(device_id: int, payload: DeviceUpdate, db: Session = Depends(g
     db.refresh(device)
     return device
 
+@app.delete("/devices/{device_id}", status_code=204)
+def delete_device(device_id: int, db: Session = Depends(get_db)):
+    device = db.get(Device, device_id)
+    if device is None:
+        raise HTTPException(status_code=404, detail="Equipo no encontrado")
+    db.delete(device)
+    db.commit()
+
+
 
 @app.get("/devices/{device_id}/snmp")
 def query_device_snmp(device_id: int, db: Session = Depends(get_db)):

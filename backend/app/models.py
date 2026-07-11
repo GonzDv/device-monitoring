@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, String,  func
+from sqlalchemy import DateTime, Float, String,  func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -30,3 +30,16 @@ class Device(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
+    status: Mapped[str] = mapped_column(String(12), server_default="unknown")
+    last_seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+class Metric(Base):
+    """Una lectura numérica de un equipo en un momento dado (serie temporal)."""
+    __tablename__ = "metrics"
+
+    time: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), primary_key=True
+    )
+    device_id: Mapped[int] = mapped_column(primary_key=True)
+    metric_key: Mapped[str] = mapped_column(String(50), primary_key=True)
+    value: Mapped[float] = mapped_column(Float)

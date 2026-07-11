@@ -9,7 +9,7 @@ class DeviceType(str, Enum):
     router = "router"
     ups = "ups"
     server = "server"
-    AP = "AP"
+    ap = "ap"
     other  = "other"
     
 class SnmpVersion(str, Enum):
