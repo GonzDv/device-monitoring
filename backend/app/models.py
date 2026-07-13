@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, Float, String,  func
+from sqlalchemy import DateTime, Float, ForeignKey , String,  func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -31,6 +31,7 @@ class Device(Base):
         DateTime(timezone=True), server_default=func.now()
     )
     status: Mapped[str] = mapped_column(String(12), server_default="unknown")
+    consecutive_failures: Mapped[int] = mapped_column(server_default="0")
     last_seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 class Metric(Base):
@@ -43,3 +44,21 @@ class Metric(Base):
     device_id: Mapped[int] = mapped_column(primary_key=True)
     metric_key: Mapped[str] = mapped_column(String(50), primary_key=True)
     value: Mapped[float] = mapped_column(Float)
+    
+
+class Alert(Base):
+    """Una alerta generada por el sistema (p. ej. equipo caído)."""
+    __tablename__ = "alerts"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    device_id: Mapped[int] = mapped_column(
+        ForeignKey("devices.id", ondelete="CASCADE")
+    )
+    alert_type: Mapped[str] = mapped_column(String(30))
+    severity: Mapped[str] = mapped_column(String(12), server_default="critical")
+    message: Mapped[str] = mapped_column(String(255))
+    state: Mapped[str] = mapped_column(String(12), server_default="active")
+    opened_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
