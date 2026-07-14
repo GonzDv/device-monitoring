@@ -1,18 +1,22 @@
 import { useEffect, useState, type FormEvent } from "react";
 
 import DeviceCard from "./components/DeviceCard";
-import { Activity, Plus, X, AlertCircle } from "lucide-react";
+import { Activity, Plus, X, AlertCircle, AlertTriangle, RefreshCw } from "lucide-react";
 import {
   getDevices,
   createDevice,
   queryDeviceSnmp,
   updateDevice,
   deleteDevice,
+  getAlerts,
   type DeviceCreate,
   type Device,
   type SnmpReadout,
+  type Alert,
 } from "./api";
 import DeviceModal from "./components/DeviceModal";
+import AlertBadge from "./components/AlertBadge";
+import AlertCard from "./components/AlertCard";
 
 function App() {
   const [error, setError] = useState<string | null>(null);
@@ -20,6 +24,7 @@ function App() {
   const [readout, setReadout] = useState<SnmpReadout | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState<number | null>(null);
+  const [alerts, setAlerts] = useState<Alert[]>([]);
 
   const openModal = () => setIsOpen(true);
   const closeModal = () => setIsOpen(false);
@@ -27,6 +32,9 @@ function App() {
   const [editingDevice, setEditingDevice] = useState<Device | null>(null);
 
   useEffect(() => {
+    getAlerts()
+      .then((data) => setAlerts(data))
+      .catch((err) => setError(String(err)));
     getDevices()
       .then((devices: Device[]) => {
         setDevices(devices);
@@ -99,6 +107,16 @@ function App() {
         .catch((err) => setError(String(err)));
     }
   };
+  const handleGetAlerts = async () => {
+    alerts && setAlerts([]);
+    try {
+      const alertsData = await getAlerts();
+      setAlerts(alertsData);
+      console.log(alertsData);
+    } catch (err) {
+      setError(String(err));
+    }
+  };
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans antialiased selection:bg-zinc-800">
@@ -117,13 +135,28 @@ function App() {
               </p>
             </div>
           </div>
-          <button
-            onClick={openModal}
-            className="flex items-center gap-2 bg-zinc-100 text-zinc-900 px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-white transition-all duration-200 shadow-sm active:scale-95"
-          >
-            <Plus className="w-4 h-4" /> Agregar Dispositivo
-          </button>
+          <div>
+            <AlertBadge count={alerts.length} />
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={openModal}
+              className="flex items-center gap-2 bg-zinc-100 text-zinc-900 px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-white transition-all duration-200 shadow-sm active:scale-95"
+            >
+              <Plus className="w-4 h-4" /> Agregar Dispositivo
+            </button>
+          </div>
         </header>
+        <div className="mb-6 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-zinc-100">
+            Alertas Activas
+          </h2>
+        </div>
+        <div className="w-full mb-6 flex items-center justify-between gap-3">
+          {alerts.map((alert) => (
+            <AlertCard key={alert.id} alert={alert} />
+          ))}
+        </div>
 
         {error && (
           <div className="mb-6 p-4 rounded-lg bg-red-950/40 border border-red-900/50 text-red-300 text-sm flex justify-between items-start shadow-sm animate-in fade-in">

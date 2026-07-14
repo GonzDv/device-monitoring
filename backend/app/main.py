@@ -8,7 +8,7 @@ from contextlib import asynccontextmanager
 from app.scheduler import scheduler, start_scheduler
 
 from app.database import get_db
-from app.models import Device, Metric, PingLog
+from app.models import Device, Metric, PingLog, Alert
 from app.snmp import snmp_get
 from app.schemas import DeviceCreate, DeviceRead, DeviceUpdate
 
@@ -146,3 +146,24 @@ def query_device_snmp(device_id: int, db: Session = Depends(get_db)):
         "ip_address": device.ip_address,
         "snmp": readout,
     }
+
+@app.get("/alerts")
+def list_alerts(state: str | None = None, db: Session = Depends(get_db)):
+    query = select(Alert).order_by(Alert.opened_at.desc())
+    if state:
+        query = query.where(Alert.state == state)
+    alerts = db.scalars(query).all()
+
+    return [
+        {
+            "id": a.id,
+            "device_id": a.device_id,
+            "alert_type": a.alert_type,
+            "severity": a.severity,
+            "message": a.message,
+            "state": a.state,
+            "opened_at": a.opened_at,
+            "resolved_at": a.resolved_at,
+        }
+        for a in alerts
+    ]

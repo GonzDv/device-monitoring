@@ -92,4 +92,23 @@ async function queryDeviceSnmp(id: number): Promise<SnmpReadout   > {
   return response.json();
 }
 
-export { getDevices, createDevice, queryDeviceSnmp, updateDevice, deleteDevice };
+export interface Alert {
+  id: number;
+  device_id: number;
+  alert_type: string;
+  severity: string;
+  message: string;
+  state: "active" | "resolved";
+  opened_at: string;
+  resolved_at: string | null;
+}
+
+async function getAlerts(state: string = "active"): Promise<Alert[]> {
+  const response = await fetch(`${BASE_URL}/alerts?state=${state}`);
+  if (!response.ok) {
+    throw new Error(`Error fetching alerts: ${response.statusText}`);
+  }
+  return response.json();
+}
+
+export { getDevices, createDevice, queryDeviceSnmp, updateDevice, deleteDevice, getAlerts };
