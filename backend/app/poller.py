@@ -4,10 +4,23 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models import Alert, Device, Metric
-from app.snmp import snmp_get
+from app.snmp import snmp_get, snmp_walk, decode_snmp_text
 
 # OIDs numéricos que guardaremos como serie temporal
 SYS_UPTIME_OID = "1.3.6.1.2.1.1.3.0"
+PAGE_COUNT_OID = "1.3.6.1.2.1.43.10.2.1.4"      # prtMarkerLifeCount
+SUPPLY_DESC_OID = "1.3.6.1.2.1.43.11.1.1.6"     # descripción del consumible
+SUPPLY_LEVEL_OID = "1.3.6.1.2.1.43.11.1.1.9"    # nivel actual
+SUPPLY_MAX_OID = "1.3.6.1.2.1.43.11.1.1.8"      # capacidad máxima
+
+SUPPLY_KEYWORDS = {
+    "black": "black", "negro": "black",
+    "cyan": "cyan", "cian": "cyan",
+    "magenta": "magenta",
+    "yellow": "yellow", "amarillo": "yellow",
+    "waste": "waste", "residual": "waste",
+}
+
 FAILURE_THRESHOLD = 3
 
 def poll_device(db: Session, device: Device) -> None:
@@ -35,7 +48,9 @@ def poll_device(db: Session, device: Device) -> None:
         device.status = "up"
         device.last_seen_at = now
         device.consecutive_failures = 0
-        _resolve_active_alert(db, device, now)   # si tenía una alerta, se resuelve
+        _resolve_active_alert(db, device, now)
+        if device.device_type == "printer":
+            poll_printer_extras(db, device, now)
     else:
         # --- El equipo no respondió ---
         device.status = "down"
@@ -88,3 +103,59 @@ def _extract_number(text: str | None) -> float | None:
     import re
     match = re.search(r"\d+", text)
     return float(match.group()) if match else None
+
+def _supply_key(description: str) -> str:
+    """Convierte la descripción del fabricante en una clave estándar."""
+    text = description.lower()
+
+    if "residual" in text or "waste" in text:
+        return "waste"
+
+    if "cyan" in text or "cian" in text:
+        return "cyan"
+    if "magenta" in text:
+        return "magenta"
+    if "yellow" in text or "amarillo" in text:
+        return "yellow"
+    if "black" in text or "negro" in text:
+        return "black"
+
+    if "toner" in text or "tóner" in text or "cartridge" in text or "cartucho" in text:
+        return "black"
+
+    return "other"
+
+def poll_printer_extras(db: Session, device: Device, now: datetime) -> None:
+    """Sondea contador de páginas y consumibles. Solo para impresoras."""
+    # --- Contador de páginas (puede haber uno o varios índices) ---
+    try:
+        counters = snmp_walk(device.ip_address, device.snmp_community,
+                            PAGE_COUNT_OID, device.snmp_port)
+        total = sum(int(value) for _, value in counters)
+        db.add(Metric(time=now, device_id=device.id,
+                    metric_key="page_count", value=float(total)))
+    except Exception:
+        pass  # si no lo reporta, seguimos sin romper
+
+    # --- Consumibles: descripción + nivel + capacidad ---
+    try:
+        descs = snmp_walk(device.ip_address, device.snmp_community,
+                        SUPPLY_DESC_OID, device.snmp_port)
+        levels = snmp_walk(device.ip_address, device.snmp_community,
+                        SUPPLY_LEVEL_OID, device.snmp_port)
+        maxes = snmp_walk(device.ip_address, device.snmp_community,
+                        SUPPLY_MAX_OID, device.snmp_port)
+
+        for i, (_, desc_value) in enumerate(descs):
+            if i >= len(levels) or i >= len(maxes):
+                break
+            level = int(levels[i][1])
+            maximum = int(maxes[i][1])
+            if level < 0 or maximum <= 0:
+                continue          
+            pct = (level / maximum) * 100
+            key = _supply_key(decode_snmp_text(desc_value))
+            db.add(Metric(time=now, device_id=device.id,
+                        metric_key=f"supply.{key}.pct", value=pct))
+    except Exception:
+        pass
